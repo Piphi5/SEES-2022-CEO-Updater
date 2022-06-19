@@ -1,6 +1,9 @@
 name: cronjob
 
+# Runs every dat at 18:00 UTC or 1 PM CST
 on:
+  schedule:
+    - cron: '00 18 * * *'
   workflow_dispatch:
     inputs:
       id:
