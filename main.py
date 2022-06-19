@@ -11,6 +11,11 @@ import shutil
 import datetime
 import pandas as pd
 import time
+from arcgis.gis import GIS
+from arcgis.features import FeatureLayerCollection
+
+raw_storage_dir = "SEES-2022-CEO-Data"
+ago_storage_dir = "CEO Output"
 
 def combine_csvs(directory, project_ids):
     while len(os.listdir(temp_dir)) < len(project_ids) or not all([csv.endswith(".csv") for csv in os.listdir(temp_dir)]):
@@ -34,21 +39,40 @@ def process_df(df, output_path):
 
 def handle_sampling_unit(driver, sampling_unit, temp_dir, project_ids):
     date_str = datetime.datetime.today().strftime("%Y-%m-%d")
+    output_file =  f"{raw_storage_dir}/{sampling_unit.output_directory}/{sampling_unit.output_prefix}-{date_str}.csv"
     os.mkdir(temp_dir)
     try:
       download_csvs(driver, sampling_unit.ceo_prefix, project_ids)
       df = combine_csvs(temp_dir, project_ids)
-      process_df(df, f"SEES-2022-CEO-Data/{sampling_unit.output_directory}/{sampling_unit.output_prefix}-{date_str}.csv")
+      process_df(df,output_file)
     finally:
       shutil.rmtree(temp_dir)
+      return output_file
+
+def upload_to_ago(gis, itemid, filename):
+  item = gis.content.get(itemid)
+  item_layer_collection = FeatureLayerCollection.fromitem(item)
+  response = item_layer_collection.manager.overwrite(
+      os.path.join(os.getcwd(), filename)
+  )
+
+  return response["success"]
 
 email = sys.argv[1]
 password = sys.argv[2]
 
+ago_username = sys.argv[3]
+ago_password = sys.argv[4]
+
+for directory in [raw_storage_dir, ago_storage_dir]:
+  if not os.path.exists(directory):
+    os.mkdir(directory)
+
+
 project_ids = [31343, 31344, 31345, 31346, 31347, 31364, 31365]
-SamplingUnit = namedtuple("SamplingUnit",  "ceo_prefix output_directory output_prefix")
-psu = SamplingUnit(ceo_prefix="https://collect.earth/dump-project-aggregate-data", output_directory="PSU", output_prefix="SEES2022-CEO-PSU")
-ssu = SamplingUnit(ceo_prefix="https://collect.earth/dump-project-raw-data", output_directory="SSU", output_prefix="SEES2022-CEO-SSU")
+SamplingUnit = namedtuple("SamplingUnit",  "ceo_prefix output_directory output_prefix itemid")
+psu = SamplingUnit(ceo_prefix="https://collect.earth/dump-project-aggregate-data", output_directory="PSU", output_prefix="SEES2022-CEO-PSU", itemid = "e185caf63fbd452aa7b3d1e6396404a9")
+ssu = SamplingUnit(ceo_prefix="https://collect.earth/dump-project-raw-data", output_directory="SSU", output_prefix="SEES2022-CEO-SSU", itemid = "543d31deb07c4a4ab4ae9d59b429508d")
 
 temp_dir = os.path.join(os.getcwd(), "Temp")
 options = webdriver.ChromeOptions()
@@ -71,6 +95,25 @@ submit.click()
 
 time.sleep(1)
 
-handle_sampling_unit(driver, psu, temp_dir, project_ids)
-handle_sampling_unit(driver, ssu, temp_dir, project_ids)
+psu_file = handle_sampling_unit(driver, psu, temp_dir, project_ids)
+ssu_file = handle_sampling_unit(driver, ssu, temp_dir, project_ids)
 driver.quit()
+
+gis = GIS(
+            url="https://igestrategies.maps.arcgis.com",
+            username=ago_username,
+            password=ago_password,
+        )
+
+psu_ago_file = f"{ago_storage_dir}/{psu.output_prefix}.csv"
+ssu_ago_file = f"{ago_storage_dir}/{ssu.output_prefix}.csv"
+
+shutil.copy(psu_file, psu_ago_file)
+shutil.copy(ssu_file, ssu_ago_file)
+
+
+psu_status = upload_to_ago(gis, psu.itemid, psu_ago_file)
+ssu_status = upload_to_ago(gis, ssu.itemid, ssu_ago_file)
+
+if not (psu_status and ssu_status):
+  raise Exception("Failed to upload to ArcGIS")

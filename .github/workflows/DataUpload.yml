@@ -27,10 +27,11 @@ jobs:
         pip install selenium
         pip install webdriver-manager
         pip install pandas
+        pip install arcgis
     - name: Clone CEO Data 
       run: git clone https://github.com/Piphi5/SEES-2022-CEO-Data.git
     - name: Upload CSVs
-      run: python main.py ${{ secrets.EMAIL }} ${{ secrets.PASSWORD }}
+      run: python main.py ${{ secrets.EMAIL }} ${{ secrets.PASSWORD }} ${{ secrets.ARCGIS_USERNAME }} ${{ secrets.ARCGIS_PASSWORD }}
     - name: Update Data Branch
       run: |
         cd SEES-2022-CEO-Data
