@@ -1,0 +1,40 @@
+name: cronjob
+
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        description: 'PR ID'
+        required: true
+        default: 'main'
+
+jobs:
+  update-clean-data:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install selenium and chrome driver manager
+      run: |
+        pip install selenium
+        pip install webdriver-manager
+        pip install pandas
+    - name: Clone CEO Data 
+      run: git clone https://github.com/Piphi5/SEES-2022-CEO-Data.git
+    - name: Upload CSVs
+      run: python main.py ${{ secrets.EMAIL }} ${{ secrets.PASSWORD }}
+    - name: Push CSVs to storage repo
+      uses: cpina/github-action-push-to-another-repository@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+      with:
+        source-directory: 'GLOBE-Clean-Datasets'
+        destination-github-username: 'Piphi5'
+        destination-repository-name: 'GLOBE-Clean-Datasets'
+        user-email: uploadingacct71@gmail.com
+        target-branch: main
