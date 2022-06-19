@@ -35,4 +35,4 @@ jobs:
         git config --global user.email "uploadingacct71@gmail.com"
         git add .
         git commit -m "Automated Data Commit"
-        git push "https://Piphi5:${{ secrets.API_TOKEN_GITHUB }}@github.com/Piphi5/SEES-2022-CEO-Data.git"
+        git push "https://Piphi5:${{ secrets.API_TOKEN_GITHUB }}@github.com/Piphi5/SEES-2022-CEO-Data.git" main
