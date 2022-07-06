@@ -69,7 +69,7 @@ for directory in [raw_storage_dir, ago_storage_dir]:
     os.mkdir(directory)
 
 
-project_ids = [31343, 31344, 31345, 31346, 31347, 31364, 31365, 31383, 31422, 31585]
+project_ids = [31343, 31344, 31345, 31346, 31347, 31364, 31365, 31383, 31422, 31585, 31679]
 SamplingUnit = namedtuple("SamplingUnit",  "ceo_prefix output_directory output_prefix itemid")
 psu = SamplingUnit(ceo_prefix="https://collect.earth/dump-project-aggregate-data", output_directory="PSU", output_prefix="SEES2022-CEO-PSU", itemid = "e185caf63fbd452aa7b3d1e6396404a9")
 ssu = SamplingUnit(ceo_prefix="https://collect.earth/dump-project-raw-data", output_directory="SSU", output_prefix="SEES2022-CEO-SSU", itemid = "543d31deb07c4a4ab4ae9d59b429508d")
